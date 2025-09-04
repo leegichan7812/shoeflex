@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="web.com.springweb.ProDetial.ProDetailDao">
+
+    <!-- resultMap 정의 -->
+    <resultMap id="ProductDetailMap" type="web.com.springweb.vo.ProductDetail">
+        <id property="productId" column="PRODUCT_ID"/>
+        <result property="name" column="NAME"/>
+        <result property="price" column="PRICE"/>
+        <result property="imageUrl" column="IMAGE_URL"/>
+        <result property="brandName" column="BRAND_NAME"/>
+        <result property="categoryName" column="CATEGORY_NAME"/>
+
+        <collection property="colorList" ofType="web.com.springweb.vo.proDetailColor">
+            <result property="colorId" column="COLOR_ID"/>
+            <result property="colorNameKor" column="COLOR_NAME_KOR"/>
+            <result property="colorCode" column="COLOR_CODE"/>
+        </collection>
+    </resultMap>
+
+    <!-- 쿼리 -->
+    <select id="getProductDetail" resultMap="ProductDetailMap">
+        SELECT 
+            p.PRODUCT_ID,
+            p.NAME,
+            p.PRICE,
+            p.IMAGE_URL,
+            b.BRAND_NAME,
+            c.CATEGORY_NAME,
+            pc.COLOR_ID,
+            col.COLOR_NAME_KOR,
+            col.COLOR_CODE
+	        FROM PRODUCTS p
+	        JOIN BRANDS b ON p.BRAND_ID = b.BRAND_ID
+	        JOIN CATEGORIES c ON p.CATEGORY_ID = c.CATEGORY_ID
+	        LEFT JOIN PRODUCT_COLORS pc ON p.PRODUCT_ID = pc.PRODUCT_ID
+	        LEFT JOIN COLORS col ON pc.COLOR_ID = col.COLOR_ID
+	        WHERE p.PRODUCT_ID = #{productId} AND pc.STATUS = '판매중'
+    </select>
+    <!-- 색상별 사이즈 리스트 조회 -->
+    <select id="getSizesByColor" resultType="web.com.springweb.vo.SizeOption">
+	    SELECT 
+        pcs.PRODUCT_COLOR_SIZE_ID,
+        s.SIZE_ID,
+        s.SIZE_VALUE,
+        pcs.STOCK
+	    FROM PRODUCT_COLOR_SIZES pcs
+	    JOIN SIZES s ON pcs.SIZE_ID = s.SIZE_ID
+	    JOIN PRODUCT_COLORS pc ON pcs.PRODUCT_COLOR_ID = pc.PRODUCT_COLOR_ID
+	    WHERE pc.PRODUCT_ID = #{productId}
+	      AND pc.COLOR_ID = #{colorId}
+	      AND pcs.STOCK > 0
+	    ORDER BY s.SIZE_VALUE
+	</select>
+
+</mapper>

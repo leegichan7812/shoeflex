@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="web.com.springweb.Inquiry.InquiryDao">
+
+<select id="getInquiryStatuses" resultType="web.com.springweb.vo.ProductInquiryView">
+  SELECT *
+    FROM (
+      SELECT V.*, ROWNUM RN
+        FROM (
+          SELECT *
+            FROM PRODUCT_INQUIRY_VIEW
+            <where>
+              <if test="status != null and status != '전체'">
+                STATUS = #{status}
+              </if>
+            </where>
+           ORDER BY INQUIRY_DATE DESC
+        ) V
+       WHERE ROWNUM &lt;= #{endRow}
+    )
+   WHERE RN &gt; #{startRow}
+</select>
+
+<select id="getInquiryTotalCount" parameterType="map" resultType="int">
+  SELECT COUNT(*) FROM PRODUCT_INQUIRY_VIEW
+  <where>
+    <if test="status != null and status != '전체'">
+      STATUS = #{status}
+    </if>
+  </where>
+</select>
+  
+  <update id="updateViewerAdmin">
+    UPDATE product_inquiry
+    SET viewer_admin_id = 
+      <choose>
+        <when test="adminId != null">
+          #{adminId}
+        </when>
+        <otherwise>
+          NULL
+        </otherwise>
+      </choose>
+    WHERE inquiry_id = #{inquiryId}
+</update>
+
+<select id="getInquiryDetail" resultType="web.com.springweb.vo.ProductInquiryView">
+    SELECT *
+    FROM PRODUCT_INQUIRY_VIEW
+    WHERE INQUIRY_ID = #{inquiryId}
+</select>
+
+<select id="getRecentUnchecked" resultType="web.com.springweb.vo.ProductInquiryView">
+    SELECT *
+    FROM (
+        SELECT *
+        FROM (
+            SELECT *
+            FROM PRODUCT_INQUIRY_VIEW
+            WHERE STATUS = '미확인'
+            ORDER BY INQUIRY_DATE ASC
+        ) sub1
+        WHERE ROWNUM &lt;= #{count}
+    ) sub2
+</select>
+
+</mapper>

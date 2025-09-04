@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="web.com.springweb.Chart.ChartDao">
+
+  <select id="getMonthlySalesCount" parameterType="list" resultType="web.com.springweb.Chart.dto.ChartMonthlyDto">
+    SELECT 
+        b.BRAND_NAME AS brandName,
+        TO_CHAR(o.ORDER_DATE, 'YYYY-MM') AS month,
+        SUM(oi.QUANTITY) AS salesCount
+    FROM ORDER_ITEMS oi
+    JOIN ORDERS o ON oi.ORDER_ID = o.ORDER_ID
+    JOIN PRODUCT_COLOR_SIZES pcs ON oi.PRODUCT_COLOR_SIZE_ID = pcs.PRODUCT_COLOR_SIZE_ID
+    JOIN PRODUCT_COLORS pc ON pcs.PRODUCT_COLOR_ID = pc.PRODUCT_COLOR_ID
+    JOIN PRODUCTS p ON pc.PRODUCT_ID = p.PRODUCT_ID
+    JOIN BRANDS b ON p.BRAND_ID = b.BRAND_ID
+    WHERE o.ORDER_DATE >= ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -11)
+    <if test="brandNames != null and brandNames.size > 0">
+        AND b.BRAND_NAME IN
+        <foreach collection="brandNames" item="brand" open="(" separator="," close=")">
+            #{brand}
+        </foreach>
+    </if>
+    GROUP BY b.BRAND_NAME, TO_CHAR(o.ORDER_DATE, 'YYYY-MM')
+    ORDER BY month, b.BRAND_NAME
+  </select>
+
+
+  <select id="getYearlySalesAmount" parameterType="list" resultType="web.com.springweb.Chart.dto.ChartYearlyDto">
+    SELECT 
+      b.BRAND_NAME AS brandName,
+      TO_CHAR(o.ORDER_DATE, 'YYYY') AS year,
+      SUM(oi.QUANTITY * p.PRICE) AS salesAmount
+    FROM ORDER_ITEMS oi
+    JOIN ORDERS o ON oi.ORDER_ID = o.ORDER_ID
+    JOIN PRODUCT_COLOR_SIZES pcs ON oi.PRODUCT_COLOR_SIZE_ID = pcs.PRODUCT_COLOR_SIZE_ID
+    JOIN PRODUCT_COLORS pc ON pcs.PRODUCT_COLOR_ID = pc.PRODUCT_COLOR_ID
+    JOIN PRODUCTS p ON pc.PRODUCT_ID = p.PRODUCT_ID
+    JOIN BRANDS b ON p.BRAND_ID = b.BRAND_ID
+    <if test="list != null and list.size() > 0">
+      WHERE b.BRAND_NAME IN
+      <foreach item="brandName" collection="list" open="(" separator="," close=")">
+        #{brandName}
+      </foreach>
+    </if>
+    GROUP BY b.BRAND_NAME, TO_CHAR(o.ORDER_DATE, 'YYYY')
+    ORDER BY year, b.BRAND_NAME
+  </select>
+
+</mapper>

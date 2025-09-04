@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="web.com.springweb.Order.OrderDao">
+
+    <select id="getOrderItemsByCartIds" resultType="web.com.springweb.vo.OrderItem">
+	     SELECT 
+	        c.CART_ID,
+	        pc.PRODUCT_ID,
+	        p.NAME AS PRODUCT_NAME,
+	        co.COLOR_NAME_KOR AS COLOR_NAME,
+	        s.SIZE_VALUE,
+	        c.QUANTITY,
+	        p.PRICE AS UNIT_PRICE,
+	        p.IMAGE_URL,
+	        pcs.PRODUCT_COLOR_SIZE_ID
+	    FROM CART c
+	    JOIN PRODUCT_COLOR_SIZES pcs ON c.PRODUCT_COLOR_SIZE_ID = pcs.PRODUCT_COLOR_SIZE_ID
+	    JOIN PRODUCT_COLORS pc ON pcs.PRODUCT_COLOR_ID = pc.PRODUCT_COLOR_ID
+	    JOIN PRODUCTS p ON pc.PRODUCT_ID = p.PRODUCT_ID
+	    JOIN COLORS co ON pc.COLOR_ID = co.COLOR_ID
+	    JOIN SIZES s ON pcs.SIZE_ID = s.SIZE_ID
+	    WHERE c.CART_ID IN
+	    <foreach collection="cartIds" item="id" open="(" separator="," close=")">
+	        #{id}
+	    </foreach>
+	</select>
+	
+	<!-- 1. 배송 저장 -->
+	<insert id="insertShipping" parameterType="web.com.springweb.vo.Shipping">
+	  <selectKey keyProperty="shippingId" resultType="int" order="BEFORE">
+	    SELECT SEQ_SHIPPING_ID.NEXTVAL FROM DUAL
+	  </selectKey>
+	  INSERT INTO SHIPPINGS (
+	    SHIPPING_ID, TRACKING_NUMBER, SHIPPING_FEE, SHIPPING_STATUS, CREATED_AT, SHIPPING_ADDRESS_ID
+	  ) VALUES (
+	    #{shippingId}, '', #{shippingFee}, '배송준비중', SYSDATE, #{shippingAddressId}
+	  )
+	</insert>
+	
+	<!-- 2. 주문 저장 -->
+	<insert id="insertOrder" parameterType="web.com.springweb.vo.Order">
+	  <selectKey keyProperty="orderId" resultType="int" order="BEFORE">
+	    SELECT SEQ_ORDER_ID.NEXTVAL FROM DUAL
+	  </selectKey>
+	  INSERT INTO ORDERS (
+	    ORDER_ID, USER_ID, ORDER_DATE, PAYMENT_METHOD_ID, ORDER_STATUS, SHIPPING_ID
+	  ) VALUES (
+	    #{orderId}, #{userId}, SYSDATE, #{paymentMethodId}, '주문완료', #{shippingId}
+	  )
+	</insert>
+	
+	<!-- 3. 주문 상품 저장 -->
+	<insert id="insertOrderItemEntity" parameterType="web.com.springweb.vo.OrderItemEntity">
+	  <selectKey keyProperty="orderItemId" resultType="int" order="BEFORE">
+	    SELECT SEQ_ORDER_ITEM_ID.NEXTVAL FROM DUAL
+	  </selectKey>
+	  INSERT INTO ORDER_ITEMS (
+	    ORDER_ITEM_ID, ORDER_ID, PRODUCT_COLOR_SIZE_ID, QUANTITY
+	  ) VALUES (
+	    #{orderItemId}, #{orderId}, #{productColorSizeId}, #{quantity}
+	  )
+	</insert>
+	
+	<!-- 4. 재고 감소 -->
+	<update id="updateStock" parameterType="map">
+	  UPDATE PRODUCT_COLOR_SIZES
+	  SET STOCK = STOCK - #{qty}
+	  WHERE PRODUCT_COLOR_SIZE_ID = #{pcsId}
+	</update>
+	
+	<!-- 5. 장바구니에서 삭제 -->
+	<delete id="deleteCart" parameterType="int">
+	  DELETE FROM CART WHERE CART_ID = #{cartId}
+	</delete>
+</mapper>

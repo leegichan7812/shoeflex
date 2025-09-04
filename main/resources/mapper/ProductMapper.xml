@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="web.com.springweb.Product.ProductDao">
+
+    
+    <select id="getBrandProductPage" resultType="web.com.springweb.vo.Products">
+	    <![CDATA[
+	    SELECT * FROM (
+	        SELECT inner_table.*, ROWNUM AS rnum FROM (
+	            SELECT * FROM PRODUCTS
+	            WHERE BRAND_ID = #{brandId}
+	              AND STATUS = '판매중'              
+	            ORDER BY PRODUCT_ID DESC
+	        ) inner_table
+	        WHERE ROWNUM <= #{offset} + #{pageSize}
+	    )
+	    WHERE rnum > #{offset}
+	    ]]>
+	</select>
+	
+	<select id="getBrandProductPageWithWish" resultType="web.com.springweb.vo.Products">
+	    <![CDATA[
+	    SELECT * FROM (
+	        SELECT inner_table.*, ROWNUM AS rnum FROM (
+	            SELECT P.*,
+	                   CASE WHEN W.PRODUCT_ID IS NOT NULL THEN 1 ELSE 0 END AS WISHED
+	            FROM PRODUCTS P
+	            LEFT JOIN WISHLIST W
+	              ON P.PRODUCT_ID = W.PRODUCT_ID
+	             AND W.USER_ID = #{userId}
+	            WHERE P.BRAND_ID = #{brandId}
+	              AND P.STATUS = '판매중'           
+	            ORDER BY P.PRODUCT_ID DESC
+	        ) inner_table
+	        WHERE ROWNUM <= #{offset} + #{pageSize}
+	    )
+	    WHERE rnum > #{offset}
+	    ]]>
+	</select>
+
+   
+    <select id="getFilteredProducts" resultType="web.com.springweb.vo.Products">
+	    SELECT * FROM (
+	        SELECT P.*, ROWNUM RN FROM (
+	            SELECT DISTINCT P.* FROM PRODUCTS P
+	            WHERE 1=1
+	              AND P.STATUS = '판매중'                 
+	            <if test="brandId != null">
+	                AND P.BRAND_ID = #{brandId}
+	            </if>
+	            <if test="categoryId != null">
+	                AND P.CATEGORY_ID = #{categoryId}
+	            </if>
+	            <if test="minPrice != null">
+	                AND P.PRICE &gt;= #{minPrice}
+	            </if>
+	            <if test="maxPrice != null">
+	                AND P.PRICE &lt;= #{maxPrice}
+	            </if>
+	            <if test="colorList != null and colorList.size() > 0">
+	                AND P.PRODUCT_ID IN (
+	                    SELECT PRODUCT_ID FROM PRODUCT_COLORS
+	                    WHERE STATUS = '판매중'         
+	                      AND COLOR_ID IN
+	                    <foreach collection="colorList" item="color" open="(" separator="," close=")">
+	                        #{color}
+	                    </foreach>
+	                )
+	            </if>
+	            <if test="sizeList != null and sizeList.size() > 0">
+	                AND P.PRODUCT_ID IN (
+	                    SELECT PC.PRODUCT_ID
+	                    FROM PRODUCT_COLOR_SIZES PCS
+	                    JOIN PRODUCT_COLORS PC ON PCS.PRODUCT_COLOR_ID = PC.PRODUCT_COLOR_ID
+	                    WHERE PC.STATUS = '판매중'      
+	                      AND PCS.SIZE_ID IN
+	                    <foreach collection="sizeList" item="size" open="(" separator="," close=")">
+	                        #{size}
+	                    </foreach>
+	                )
+	            </if>
+	            ORDER BY P.PRODUCT_ID DESC
+	        ) P
+	    )
+	    WHERE RN BETWEEN #{startRow} AND #{endRow}
+	</select>
+	
+	<select id="getFilteredProductsWithWish" resultType="web.com.springweb.vo.Products">
+	    SELECT * FROM (
+	        SELECT P.*,
+	               CASE WHEN W.PRODUCT_ID IS NOT NULL THEN 1 ELSE 0 END AS WISHED,
+	               ROWNUM RN
+	        FROM (
+	            SELECT DISTINCT P.* FROM PRODUCTS P
+	            LEFT JOIN WISHLIST W
+	              ON P.PRODUCT_ID = W.PRODUCT_ID
+	             AND W.USER_ID = #{userId}
+	            WHERE 1=1
+	              AND P.STATUS = '판매중'                
+	            <if test="brandId != null">
+	                AND P.BRAND_ID = #{brandId}
+	            </if>
+	            <if test="categoryId != null">
+	                AND P.CATEGORY_ID = #{categoryId}
+	            </if>
+	            <if test="minPrice != null">
+	                AND P.PRICE &gt;= #{minPrice}
+	            </if>
+	            <if test="maxPrice != null">
+	                AND P.PRICE &lt;= #{maxPrice}
+	            </if>
+	            <if test="colorList != null and colorList.size() > 0">
+	                AND P.PRODUCT_ID IN (
+	                    SELECT PRODUCT_ID FROM PRODUCT_COLORS
+	                    WHERE STATUS = '판매중'          
+	                      AND COLOR_ID IN
+	                    <foreach collection="colorList" item="color" open="(" separator="," close=")">
+	                        #{color}
+	                    </foreach>
+	                )
+	            </if>
+	            <if test="sizeList != null and sizeList.size() > 0">
+	                AND P.PRODUCT_ID IN (
+	                    SELECT PC.PRODUCT_ID
+	                    FROM PRODUCT_COLOR_SIZES PCS
+	                    JOIN PRODUCT_COLORS PC ON PCS.PRODUCT_COLOR_ID = PC.PRODUCT_COLOR_ID
+	                    WHERE PC.STATUS = '판매중'       
+	                      AND PCS.SIZE_ID IN
+	                    <foreach collection="sizeList" item="size" open="(" separator="," close=")">
+	                        #{size}
+	                    </foreach>
+	                )
+	            </if>
+	            ORDER BY P.PRODUCT_ID DESC
+	        ) P
+	    )
+	    WHERE RN BETWEEN #{startRow} AND #{endRow}
+	</select>
+	
+	<select id="getFilteredProductsCount" resultType="int">
+	    SELECT COUNT(*) FROM PRODUCTS P
+	    WHERE 1=1
+	      AND P.STATUS = '판매중'                         
+	    <if test="brandId != null">
+	        AND P.BRAND_ID = #{brandId}
+	    </if>
+	    <if test="categoryId != null">
+	        AND P.CATEGORY_ID = #{categoryId}
+	    </if>
+	    <if test="minPrice != null">
+	        AND P.PRICE &gt;= #{minPrice}
+	    </if>
+	    <if test="maxPrice != null">
+	        AND P.PRICE &lt;= #{maxPrice}
+	    </if>
+	    <if test="colorList != null and colorList.size() > 0">
+	        AND P.PRODUCT_ID IN (
+	            SELECT PRODUCT_ID FROM PRODUCT_COLORS
+	            WHERE STATUS = '판매중'                  
+	              AND COLOR_ID IN
+	            <foreach collection="colorList" item="color" open="(" separator="," close=")">
+	                #{color}
+	            </foreach>
+	        )
+	    </if>
+	    <if test="sizeList != null and sizeList.size() > 0">
+	        AND P.PRODUCT_ID IN (
+	            SELECT PC.PRODUCT_ID
+	            FROM PRODUCT_COLOR_SIZES PCS
+	            JOIN PRODUCT_COLORS PC ON PCS.PRODUCT_COLOR_ID = PC.PRODUCT_COLOR_ID
+	            WHERE PC.STATUS = '판매중'               
+	              AND PCS.SIZE_ID IN
+	            <foreach collection="sizeList" item="size" open="(" separator="," close=")">
+	                #{size}
+	            </foreach>
+	        )
+	    </if>
+	</select>
+
+
+    
+    <select id="getColorsByProductId" resultType="web.com.springweb.vo.Color">
+	    SELECT C.COLOR_ID, C.COLOR_NAME_KOR, C.COLOR_CODE
+	    FROM PRODUCT_COLORS PC
+	    JOIN COLORS C ON PC.COLOR_ID = C.COLOR_ID
+	    WHERE PC.PRODUCT_ID = #{productId}
+	      AND PC.STATUS = '판매중'                         
+	</select>
+	
+	<select id="getSizesByProductId" resultType="web.com.springweb.vo.Size">
+	    SELECT DISTINCT S.SIZE_ID, S.SIZE_VALUE
+	    FROM PRODUCT_COLOR_SIZES PCS
+	    JOIN PRODUCT_COLORS PC ON PCS.PRODUCT_COLOR_ID = PC.PRODUCT_COLOR_ID
+	    JOIN SIZES S ON PCS.SIZE_ID = S.SIZE_ID
+	    WHERE PC.PRODUCT_ID = #{productId}
+	      AND PC.STATUS = '판매중'                        
+	      AND PCS.STOCK > 0
+	    ORDER BY S.SIZE_VALUE ASC
+	</select>
+
+
+    
+    <select id="countByBrand" resultType="int">
+	    SELECT COUNT(*) FROM PRODUCTS
+	    WHERE BRAND_ID = #{brandId}
+	      AND STATUS = '판매중'                           
+	</select>
+	
+	<select id="getProductsByIds" resultType="web.com.springweb.vo.Products">
+	    SELECT * FROM PRODUCTS
+	    WHERE STATUS = '판매중'                             
+	      AND PRODUCT_ID IN
+	    <foreach item="id" index="index" collection="productIds" open="(" separator="," close=")">
+	        #{id}
+	    </foreach>
+	</select>
+	
+<!-- 추천 5개 조회 (예: selectRecommendationsByUser) -->
+<select id="selectRecommendationsByUser" parameterType="int" resultType="map">
+  <![CDATA[
+  SELECT
+    p.PRODUCT_ID    AS "productId",
+    p.NAME          AS "name",
+    p.IMAGE_URL     AS "imageUrl",
+    p.PRICE         AS "price",
+    b.BRAND_NAME    AS "brandName",
+    c.CATEGORY_NAME AS "categoryName"
+  FROM USER_RECOMMENDATIONS r
+  JOIN PRODUCTS p       ON p.PRODUCT_ID = r.PRODUCT_ID
+  LEFT JOIN BRANDS b    ON b.BRAND_ID   = p.BRAND_ID
+  LEFT JOIN CATEGORIES c ON c.CATEGORY_ID = p.CATEGORY_ID
+  WHERE r.USER_ID = #{userId}
+    AND p.STATUS = '판매중'
+    AND p.IMAGE_URL IS NOT NULL         -- ✅ 비로그인 만료 이슈 회피
+  ORDER BY r.RANK_ORDER
+  ]]>
+</select>
+
+<!-- 인기 Top5 대체 쿼리도 동일하게 alias + resultType="map" -->
+<select id="selectPopularFallback" resultType="map">
+<![CDATA[
+  SELECT *
+  FROM (
+    SELECT
+      p.PRODUCT_ID    AS "productId",
+      p.NAME          AS "name",
+      p.IMAGE_URL     AS "imageUrl",
+      p.PRICE         AS "price",
+      b.BRAND_NAME    AS "brandName",
+      c.CATEGORY_NAME AS "categoryName",
+      COUNT(*)        AS cnt,
+      ROW_NUMBER() OVER (
+        ORDER BY COUNT(*) DESC, p.PRODUCT_ID ASC
+      ) AS rn
+    FROM TWO.PURCHASE_HISTORY_FULL ph
+    JOIN PRODUCTS p       ON p.PRODUCT_ID = ph.PRODUCT_ID
+    LEFT JOIN BRANDS b    ON b.BRAND_ID   = p.BRAND_ID
+    LEFT JOIN CATEGORIES c ON c.CATEGORY_ID = p.CATEGORY_ID
+    WHERE ph.PURCHASED_AT >= SYSDATE - 90
+      AND p.STATUS = '판매중'          -- ✅ 필터를 랭킹 전에 적용
+      AND p.IMAGE_URL IS NOT NULL     -- ✅ 만료/결손 이미지 제외
+    GROUP BY
+      p.PRODUCT_ID, p.NAME, p.IMAGE_URL, p.PRICE,
+      b.BRAND_NAME, c.CATEGORY_NAME
+  )
+  WHERE rn <= 5
+  ORDER BY rn
+]]>
+</select>
+
+<!-- 인기 대체: 부족분만 채우기 + 이미 추천된 상품 제외 -->
+<select id="selectPopularFallbackFill" parameterType="map" resultType="map">
+  <![CDATA[
+  SELECT *
+  FROM (
+    SELECT
+      p.PRODUCT_ID    AS "productId",
+      p.NAME          AS "name",
+      p.IMAGE_URL     AS "imageUrl",
+      p.PRICE         AS "price",
+      b.BRAND_NAME    AS "brandName",
+      c.CATEGORY_NAME AS "categoryName",
+      t.CNT
+    FROM (
+      SELECT PRODUCT_ID, COUNT(*) AS CNT
+      FROM TWO.PURCHASE_HISTORY_FULL
+      WHERE PURCHASED_AT >= SYSDATE - 90
+      GROUP BY PRODUCT_ID
+      ORDER BY COUNT(*) DESC
+    ) t
+    JOIN PRODUCTS p       ON p.PRODUCT_ID = t.PRODUCT_ID
+    LEFT JOIN BRANDS b    ON b.BRAND_ID   = p.BRAND_ID
+    LEFT JOIN CATEGORIES c ON c.CATEGORY_ID = p.CATEGORY_ID
+    WHERE p.STATUS = '판매중'
+      AND p.IMAGE_URL IS NOT NULL
+      /* 이미 선택된 추천 상품 제외 */
+      /* excludeIds가 비어있으면 이 조건 자체를 스킵 */
+      ]]>
+      <if test="excludeIds != null and excludeIds.size() > 0">
+        <![CDATA[
+        AND p.PRODUCT_ID NOT IN (
+          ]]>
+          <foreach collection="excludeIds" item="pid" separator="," open="" close="">
+            #{pid}
+          </foreach>
+        <![CDATA[
+        )
+        ]]>
+      </if>
+      <![CDATA[
+    ORDER BY t.CNT DESC, p.PRODUCT_ID
+  )
+  WHERE ROWNUM <= #{limit}   -- ✅ 부족분만
+  ]]>
+</select>
+
+<select id="countByCategory" resultType="int">
+  SELECT COUNT(*)
+  FROM PRODUCTS
+  WHERE CATEGORY_ID = #{categoryId}
+    AND STATUS = '판매중'
+</select>
+
+</mapper>

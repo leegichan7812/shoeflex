@@ -1,0 +1,168 @@
+@charset "UTF-8";
+	  .valid-msg {
+	    color: green;
+	  }
+	  .error-msg {
+	    color: red;
+	  }
+	  .valid-input {
+	    border: 2px solid green;
+	  }
+	  .invalid-input {
+	    border: 2px solid red;
+	  }
+	  -- 마이페이지 사이드 바
+	  .mypage-sidebar {
+        background: #fff;
+        min-height: 100vh;
+        padding: 30px 20px;
+        border-right: 1px solid #ddd;
+    	flex-shrink: 0;    /* 줄어들지 않도록 고정 */
+      }
+      
+      .mypage .col-lg-2{
+      	min-width: 200px; /* 사이드바 최소 너비 고정 */
+      }
+      
+      
+      .mypage-sidebar h5 {
+        font-weight: bold;
+        margin-bottom: 30px;
+      }
+      .mypage-sidebar .nav-link {
+        color: #333;
+        padding: 12px 15px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        transition: background 0.3s;
+      }
+      .mypage-sidebar .nav-link:hover,
+      .mypage-sidebar .nav-link.active {
+        background: #0d6efd;
+        color: #fff !important;
+      }
+	  .mypage-content {
+        min-width: 600px; /* 콘텐츠 최소 너비 고정 */
+    	flex-grow: 1;     /* 가로 여백을 채움 */
+	  }
+	  
+	  /* 라디오 버튼 완전 숨김 */
+	  .btn-check {
+		position: absolute !important;
+		clip: rect(0,0,0,0);
+		pointer-events: none;
+	  }
+	  /* 선택 시 스타일 */
+	  .btn-check:checked + .form-control {
+		border: 2px solid #0d6efd;
+		background-color: #e7f1ff;
+		font-weight: bold;
+	  }
+	  /* 모달창 x 버튼 */
+	  .joinupt-close {
+		background: none;
+		border: none;
+		font-size: 30px;
+		color: #999;
+		cursor: pointer;
+	  }
+	  .joinupt-close:hover {
+		color: #333;
+	  }
+	  .cart_img{
+	  	width:100px; 
+	  	height:100px; 
+	  	min-width: 100px;
+	  	min-height: 100px;
+	  	object-fit:cover; 
+	  	margin-left:20px; 
+	  	border: 4px solid #D3D3D3; 
+	  	border-radius: 2px;
+	  }
+	  -- 상품 상세 페이지 수량 조절 버튼 
+	  .wrap-pd-num-product {
+	      display: flex;
+	      align-items: center;
+	  }
+
+	  /* 사이즈 선택박스 */
+	  #sizeSelect {
+	      width: 200px;
+	      height: 45px;
+	      font-size: 16px;
+	      border: 1px solid #aaa;
+	      border-radius: 5px;
+	      padding: 8px 12px;
+	      margin-top: 10px;
+	  }
+
+	  /* 수량 버튼 */
+	  .pd-btn-down, .pd-btn-up {
+	      width: 36px;
+	      height: 36px;
+	      border: 1px solid #ccc;
+	      background-color: #f9f9f9;
+	      font-size: 20px;
+	      text-align: center;
+	      line-height: 36px;
+	      
+	  }
+
+	  /* 수량 input */
+	  .num-product {
+	      width: 60px;
+	      height: 36px;
+	      text-align: center;
+	      font-size: 16px;
+	     
+	  }
+	  
+	  /* 수량 + 버튼 감싸는 영역 */
+	  .fixed-inline-group {
+	      display: flex;
+	      flex-wrap: nowrap;
+	      align-items: center;
+	      gap: 10px; /* 여백 */
+	      margin-top: 20px;
+	  }
+	/* 결제 수단 선택 */
+	input[name="paymentMethodId"]:checked + label.payment-option {
+	  border: 2px solid #28a745;
+	  background-color: #e6ffed;
+	  border-radius: 8px;
+	  padding: 10px;
+	}
+	input[name="paymentMethodId"]:checked + label.payment-option::after {
+	  content: " ✔ 선택됨";
+	  color: #28a745;
+	  font-weight: bold;
+	  margin-left: 8px;
+	  font-size: 14px;
+	}
+	label.payment-option {
+	  display: flex;
+	  align-items: center;
+	  cursor: pointer;
+	  transition: all 0.2s ease-in-out;
+	}
+	
+	.mp-btn-box{
+		min-width:120px; 
+		display: flex; 
+		flex-direction: column; 
+		gap:10px; 
+		align-items: center;
+	}
+	.mp-btn-box button{
+		width: 120px;
+		height: 40px;
+		font-size:15px; 
+		padding:5px 10px;
+		border: 2px solid #b0e3ff;
+		background: #e6ffed;
+	}
+	#cartTotalArea {
+    position: sticky;
+    top: 90px; /* 위에서 20px 떨어진 상태로 고정 */
+    height: fit-content; /* 내용 높이만큼만 차지 */
+}

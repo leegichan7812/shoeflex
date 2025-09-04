@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="web.com.springweb.CER.CERDao">
+
+  <!-- 공통 컬럼 (별칭으로 카멜케이스 매핑 안전하게) -->
+	<sql id="Base_Columns">
+	  REQ_ID                AS reqId,
+	  USER_ID               AS userId,
+	  REQ_TYPE              AS reqType,
+	  REQ_STATUS            AS reqStatus,
+	  REASON_CODE           AS reasonCode,
+	  REASON_DETAIL         AS reasonDetail,
+	  PICKUP_ADDRESS        AS pickupAddress,
+	  CREATED_AT            AS createdAt,
+	  APPROVED_AT           AS approvedAt,
+	  COMPLETED_AT          AS completedAt,
+	  PROCESSED_BY          AS processedBy,
+	  PRODUCT_COLOR_SIZE_ID AS productColorSizeId,
+	  ORDER_ITEM_ID         AS orderItemId,
+	  ARCHIVED_AT           AS archivedAt,
+	  DELETED_AT            AS deletedAt,
+	  REJECT_REASON 		AS rejectReason,
+	  IS_DELETED            AS isDeleted
+	</sql>
+
+<select id="findCerItemViewByOrderItemId"
+        parameterType="long"
+        resultType="web.com.springweb.CER.CerItemView">
+  SELECT
+    oi.ORDER_ITEM_ID              AS orderItemId,
+    pcs.PRODUCT_COLOR_SIZE_ID     AS productColorSizeId,
+    p.NAME                        AS name,          -- ✅ FIX: 제품명
+    c.COLOR_NAME_KOR              AS colorNameKor,  -- 실제 컬럼
+    s.SIZE_VALUE                  AS sizeValue,     -- 실제 컬럼
+    oi.QUANTITY                   AS quantity
+  FROM ORDER_ITEMS oi
+  JOIN PRODUCT_COLOR_SIZES pcs  ON pcs.PRODUCT_COLOR_SIZE_ID = oi.PRODUCT_COLOR_SIZE_ID
+  JOIN PRODUCT_COLORS pc        ON pc.PRODUCT_COLOR_ID       = pcs.PRODUCT_COLOR_ID
+  LEFT JOIN PRODUCTS p          ON p.PRODUCT_ID              = pc.PRODUCT_ID
+  LEFT JOIN COLORS   c          ON c.COLOR_ID                = pc.COLOR_ID
+  LEFT JOIN SIZES    s          ON s.SIZE_ID                 = pcs.SIZE_ID
+  WHERE oi.ORDER_ITEM_ID = #{orderItemId}
+</select>
+
+  <!-- 단건 조회 -->
+  <select id="selectById" parameterType="int" resultType="web.com.springweb.vo.AfterSalesRequest">
+    SELECT <include refid="Base_Columns"/>
+    FROM AFTER_SALES_REQUEST
+    WHERE REQ_ID = #{reqId}
+  </select>
+
+  <!-- 목록 (상태 optional) -->
+<select id="selectList" resultType="web.com.springweb.vo.AfterSalesRequest">
+  SELECT <include refid="Base_Columns"/>
+  FROM AFTER_SALES_REQUEST
+  <where>
+    <!-- view 필터 -->
+    <choose>
+      <when test="view == null or view == '' or view == 'active'">
+        NVL(IS_DELETED,'N') = 'N' AND ARCHIVED_AT IS NULL
+      </when>
+      <when test="view == 'archived'">
+        ARCHIVED_AT IS NOT NULL
+      </when>
+      <when test="view == 'deleted'">
+        NVL(IS_DELETED,'N') = 'Y'
+      </when>
+      <otherwise>
+        1 = 1
+      </otherwise>
+    </choose>
+
+    <if test="reqStatus != null and reqStatus != ''">
+      AND REQ_STATUS = #{reqStatus}
+    </if>
+    <if test="reqType != null and reqType != ''">
+      AND REQ_TYPE = #{reqType}
+    </if>
+  </where>
+  ORDER BY REQ_ID DESC
+</select>
+
+<!-- 총 개수 -->
+<select id="countList" resultType="int">
+  SELECT COUNT(*)
+  FROM AFTER_SALES_REQUEST
+  <where>
+    <choose>
+      <when test="view == null or view == '' or view == 'active'">
+        NVL(IS_DELETED,'N') = 'N' AND ARCHIVED_AT IS NULL
+      </when>
+      <when test="view == 'archived'"> ARCHIVED_AT IS NOT NULL </when>
+      <when test="view == 'deleted'"> NVL(IS_DELETED,'N') = 'Y' </when>
+      <otherwise> 1=1 </otherwise>
+    </choose>
+    <if test="reqStatus != null and reqStatus != ''"> AND REQ_STATUS = #{reqStatus} </if>
+    <if test="reqType   != null and reqType   != ''"> AND REQ_TYPE   = #{reqType}   </if>
+  </where>
+</select>
+
+<!-- 페이징 목록 (Oracle 11g: ROWNUM) -->
+<select id="selectListPaged" resultType="web.com.springweb.vo.AfterSalesRequest">
+  SELECT * 
+  FROM (
+    SELECT ROWNUM AS rn, inner_data.*
+    FROM (
+      SELECT <include refid="Base_Columns"/>
+      FROM AFTER_SALES_REQUEST
+      <where>
+        <choose>
+          <when test="view == null or view == '' or view == 'active'">
+            NVL(IS_DELETED,'N') = 'N' AND ARCHIVED_AT IS NULL
+          </when>
+          <when test="view == 'archived'"> ARCHIVED_AT IS NOT NULL </when>
+          <when test="view == 'deleted'"> NVL(IS_DELETED,'N') = 'Y' </when>
+          <otherwise> 1=1 </otherwise>
+        </choose>
+        <if test="reqStatus != null and reqStatus != ''"> AND REQ_STATUS = #{reqStatus} </if>
+        <if test="reqType   != null and reqType   != ''"> AND REQ_TYPE   = #{reqType}   </if>
+      </where>
+      ORDER BY REQ_ID DESC
+    ) inner_data
+    WHERE ROWNUM &lt;= #{offset} + #{limit}
+  ) outer_data
+  WHERE rn &gt; #{offset}
+</select>
+
+
+  <!-- INSERT (Oracle sequence) -->
+<insert id="insert" parameterType="web.com.springweb.vo.AfterSalesRequest">
+  <selectKey keyProperty="reqId" resultType="int" order="BEFORE">
+    SELECT AFTER_SALES_REQUEST_SEQ.NEXTVAL FROM DUAL
+  </selectKey>
+  INSERT INTO AFTER_SALES_REQUEST (
+    REQ_ID, USER_ID, REQ_TYPE, REQ_STATUS, REASON_CODE, REASON_DETAIL,
+    PICKUP_ADDRESS, CREATED_AT, APPROVED_AT, COMPLETED_AT, PROCESSED_BY,
+    PRODUCT_COLOR_SIZE_ID, ORDER_ITEM_ID
+  ) VALUES (
+    #{reqId,                jdbcType=INTEGER},
+    #{userId,               jdbcType=INTEGER},
+    #{reqType,              jdbcType=VARCHAR},
+    COALESCE(#{reqStatus,   jdbcType=VARCHAR}, '신청'),
+    #{reasonCode,           jdbcType=VARCHAR},
+    #{reasonDetail,         jdbcType=VARCHAR},
+    #{pickupAddress,        jdbcType=VARCHAR},
+    COALESCE(#{createdAt,   jdbcType=TIMESTAMP}, SYSDATE),
+    #{approvedAt,           jdbcType=TIMESTAMP},
+    #{completedAt,          jdbcType=TIMESTAMP},
+    #{processedBy,          jdbcType=INTEGER},
+    #{productColorSizeId,   jdbcType=INTEGER},
+    #{orderItemId,          jdbcType=INTEGER}
+  )
+</insert>
+  <!-- update (Oracle sequence) -->
+<update id="update" parameterType="web.com.springweb.vo.AfterSalesRequest">
+  UPDATE AFTER_SALES_REQUEST
+  <set>
+    <if test="userId != null">USER_ID = #{userId},</if>
+    <if test="reqType != null and reqType != ''">REQ_TYPE = #{reqType},</if>
+    <if test="reqStatus != null and reqStatus != ''">REQ_STATUS = #{reqStatus},</if>
+    <if test="reasonCode != null">REASON_CODE = #{reasonCode},</if>
+    <if test="reasonDetail != null">REASON_DETAIL = #{reasonDetail},</if>
+    <if test="pickupAddress != null">PICKUP_ADDRESS = #{pickupAddress},</if>
+    <if test="approvedAt != null">APPROVED_AT = #{approvedAt, jdbcType=TIMESTAMP},</if>
+    <if test="completedAt != null">COMPLETED_AT = #{completedAt, jdbcType=TIMESTAMP},</if>
+    <if test="processedBy != null">PROCESSED_BY = #{processedBy},</if>
+    <if test="productColorSizeId != null">PRODUCT_COLOR_SIZE_ID = #{productColorSizeId},</if>
+    <if test="orderItemId != null">ORDER_ITEM_ID = #{orderItemId},</if>
+    <if test="archivedAt != null">ARCHIVED_AT = #{archivedAt, jdbcType=TIMESTAMP},</if>
+    <if test="deletedAt != null">DELETED_AT = #{deletedAt, jdbcType=TIMESTAMP},</if>
+    <if test="rejectReason != null">REJECT_REASON = #{rejectReason},</if>
+    <if test="isDeleted != null and isDeleted != ''">IS_DELETED = #{isDeleted},</if>
+  </set>
+  WHERE REQ_ID = #{reqId}
+</update>
+
+<!-- [내 신청 목록] 전체(비페이징) -->
+<select id="selectListByUser" resultType="web.com.springweb.vo.AfterSalesRequest">
+  SELECT <include refid="Base_Columns"/>
+  FROM AFTER_SALES_REQUEST
+  <where>
+    USER_ID = #{userId}
+    <choose>
+      <when test="view == null or view == '' or view == 'active'">
+        AND NVL(IS_DELETED,'N') = 'N' AND ARCHIVED_AT IS NULL
+      </when>
+      <when test="view == 'archived'">
+        AND ARCHIVED_AT IS NOT NULL
+      </when>
+      <when test="view == 'deleted'">
+        AND NVL(IS_DELETED,'N') = 'Y'
+      </when>
+      <otherwise>
+        AND 1 = 1
+      </otherwise>
+    </choose>
+    <if test="reqStatus != null and reqStatus != ''">
+      AND REQ_STATUS = #{reqStatus}
+    </if>
+    <if test="reqType != null and reqType != ''">
+      AND REQ_TYPE = #{reqType}
+    </if>
+  </where>
+  ORDER BY REQ_ID DESC
+</select>
+
+<!-- [내 신청 목록] 총 개수 -->
+<select id="countListByUser" resultType="int">
+  SELECT COUNT(*)
+  FROM AFTER_SALES_REQUEST
+  <where>
+    USER_ID = #{userId}
+    <choose>
+      <when test="view == null or view == '' or view == 'active'">
+        AND NVL(IS_DELETED,'N') = 'N' AND ARCHIVED_AT IS NULL
+      </when>
+      <when test="view == 'archived'"> AND ARCHIVED_AT IS NOT NULL </when>
+      <when test="view == 'deleted'"> AND NVL(IS_DELETED,'N') = 'Y' </when>
+      <otherwise> AND 1=1 </otherwise>
+    </choose>
+    <if test="reqStatus != null and reqStatus != ''"> AND REQ_STATUS = #{reqStatus} </if>
+    <if test="reqType   != null and reqType   != ''"> AND REQ_TYPE   = #{reqType}   </if>
+  </where>
+</select>
+
+<!-- [내 신청 목록] 페이징(Oracle 11g ROWNUM) -->
+<select id="selectListByUserPaged" resultType="web.com.springweb.vo.AfterSalesRequest">
+  SELECT *
+  FROM (
+    SELECT ROWNUM AS rn, inner_data.*
+    FROM (
+      SELECT <include refid="Base_Columns"/>
+      FROM AFTER_SALES_REQUEST
+      <where>
+        USER_ID = #{userId}
+        <choose>
+          <when test="view == null or view == '' or view == 'active'">
+            AND NVL(IS_DELETED,'N') = 'N' AND ARCHIVED_AT IS NULL
+          </when>
+          <when test="view == 'archived'"> AND ARCHIVED_AT IS NOT NULL </when>
+          <when test="view == 'deleted'"> AND NVL(IS_DELETED,'N') = 'Y' </when>
+          <otherwise> AND 1=1 </otherwise>
+        </choose>
+        <if test="reqStatus != null and reqStatus != ''"> AND REQ_STATUS = #{reqStatus} </if>
+        <if test="reqType   != null and reqType   != ''"> AND REQ_TYPE   = #{reqType}   </if>
+      </where>
+      ORDER BY REQ_ID DESC
+    ) inner_data
+    WHERE ROWNUM &lt;= #{offset} + #{limit}
+  )
+  WHERE rn &gt; #{offset}
+</select>
+
+<!-- 진행 중인 신청 여부 확인 -->
+<select id="countOpenRequests" parameterType="long" resultType="int">
+  SELECT COUNT(*)
+  FROM AFTER_SALES_REQUEST
+  WHERE ORDER_ITEM_ID = #{orderItemId}
+    AND NVL(IS_DELETED,'N') = 'N'
+    AND REQ_STATUS IN ('신청','승인')
+</select>
+
+<select id="findOpenRequestByOrderItemId"
+        parameterType="long"
+        resultType="web.com.springweb.vo.AfterSalesRequest">
+  SELECT <include refid="Base_Columns"/>
+  FROM AFTER_SALES_REQUEST
+  WHERE ORDER_ITEM_ID = #{orderItemId}
+    AND NVL(IS_DELETED,'N') = 'N'
+    AND REQ_STATUS IN ('신청','승인')
+</select>
+
+
+
+
+
+</mapper>

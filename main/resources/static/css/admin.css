@@ -1,0 +1,145 @@
+
+
+	.table-notice-hover tbody tr:hover{
+		background-color: #ffe066 !important; /* 밝은 노랑 */
+	    transition: background-color 0.2s;
+		
+	}
+
+
+
+		.status-badge {
+            padding: 5px 10px;
+            font-size: 75%;
+            font-weight: 700;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: baseline;
+            border-radius: .375rem;
+            color: #fff; /* White text for all badges */
+        }
+        .status-확인중 { background-color: #6c757d; /* Gray */ }
+        .status-답변중 { background-color: #007bff; /* Blue */ }
+        .status-답변완료 { background-color: #28a745; /* Green */ }
+        .status-관리자-확인중 {
+            background-color: #ffc107; /* Yellow */
+            color: #212529; /* Dark text for yellow */
+        }
+
+        /* Make table rows clickable */
+        #statusTable tbody tr {
+            cursor: pointer;
+        }
+
+        /* Modal Specific Styles */
+        .modal-body-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        .modal-content{
+        	width: 800px;
+        	margin: 0 auto;
+        	background: gray;
+        }
+        .modal-body-section p {
+            margin-bottom: 0.5rem;
+        }
+        .modal-subtitle {
+            font-weight: bold;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 4px;
+        }
+        .highlight-box {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 0.5rem;
+            border: 1px solid #dee2e6;
+        }
+        #answerInput {
+            background-color: #fffefc;
+            border: 1px solid #ced4da;
+        }
+        .modal-body-section img {
+            width: 200px;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .card{
+        	background: white;
+        	border-radius: 10px;
+        	color:black;
+        }        
+        .card-body{
+        	background: white;
+        	border-radius: 10px;
+        	color:black;
+        }
+        .card-body h4{
+        	color:black;
+        }
+        .card-title{
+        	color:black;
+        }
+        
+ 
+.del-product-btn:hover {
+    color: #c0392b !important;
+    font-weight: bold;
+    text-shadow: 0 0 2px #fff;
+}
+.del-product-btn{
+    border:none; background:none; color:#e74c3c; font-size:40px; cursor:pointer;
+}
+
+.pause-product-btn {
+    font-size: 15px;
+    cursor: pointer;
+    padding: 8px 13px;
+    line-height: 1;
+    transition: color 0.2s;
+}
+.pause-color-btn{
+	font-size: 12px;
+	cursor: pointer;
+    padding: 5px 10px;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.navbar .dropdown .dropdown-menu {
+  left: 0 !important;
+  right: auto !important;
+  transform-origin: top left;
+}
+        
+        
+.brand_table td{
+	padding: 2px;
+}
+.brand_table th{
+	padding: 10px 2px;
+}
+
+.brand-body-scroll {
+  height: 670px;              /* tbody 영역 높이 */
+  overflow-y: auto;           /* 세로 스크롤 */
+  scrollbar-width: none;      /* Firefox 스크롤바 숨김 */
+  -ms-overflow-style: none;   /* IE, Edge 스크롤바 숨김 */
+}
+.brand-body-scroll::-webkit-scrollbar {
+  display: none;              /* 크롬, 사파리, 엣지 */
+}
+
+.brand-logo-mini{
+	padding: 0;
+}
+.sidebar-brand{
+	padding: 0;
+}
+
